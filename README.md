@@ -13,7 +13,7 @@ Super basic NFT minter for dummies.
 
 #### Usage
 
-1. Run `java -jar minting-for-dummies-<version>.jar <box-id> <wallet-address> <mnemonic>
+1. Run `java -jar minting-for-dummies-<version>.jar <box-id> <wallet-address> <mnemonic>`
 
 ## Reporting Issues
 
