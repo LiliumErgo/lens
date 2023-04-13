@@ -21,7 +21,7 @@ object MintForDummies extends App {
 
     val mintForDummiesTxId: String = MintForDummiesCommands.mint(ergoClient, boxId, walletAddress, mnemonic)
 
-    println(Console.GREEN + s"========== ${MintForDummiesUtils.getTimeStamp("UTC")} GUAPSWAP ONETIME TX SUCCESSFULL ==========" + Console.RESET)
+    println(Console.GREEN + s"========== ${MintForDummiesUtils.getTimeStamp("UTC")} MINTFORDUMMIES TX SUCCESSFULL ==========" + Console.RESET)
 
     // Print tx link to the user
     println(Console.BLUE + s"========== ${MintForDummiesUtils.getTimeStamp("UTC")} VIEW MINTFORDUMMIES TX IN THE ERGO-EXPLORER WITH THE LINK BELOW ==========" + Console.RESET)
