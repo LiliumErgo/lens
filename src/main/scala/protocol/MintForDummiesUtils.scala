@@ -1,15 +1,8 @@
 package protocol
 
-import scala.collection.immutable.HashMap
-import scala.util.{Try, Success, Failure}
-import java.io.{File, FileNotFoundException}
-
 import java.time.LocalDateTime
 import java.time.ZoneId
 
-/**
-  * Object representing constants and methods relevant to GuapSwap.
-  */
 object MintForDummiesUtils {
 
   final val ERGO_EXPLORER_TX_URL_PREFIX: String = "https://explorer.ergoplatform.com/en/transactions/"

@@ -8,16 +8,6 @@ import java.util
 
 object MintForDummiesCommands {
 
-    /**
-      * Perform a onetime swap.
-      *
-      * @param ergoClient
-      * @param nodeConfig
-      * @param parameters
-      * @param proxyAddress
-      * @param unlockedSecretStorage
-      * @return Onetime GuapSwap transaction ID string.
-      */
     def mint(ergoClient: ErgoClient, boxId: String, walletAddress: String, mnemonic: String): String = {
 
         // Generate blockchain context

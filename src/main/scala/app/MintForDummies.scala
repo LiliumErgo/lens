@@ -4,9 +4,6 @@ package app
 import org.ergoplatform.appkit.{ErgoClient, NetworkType, RestApiErgoClient}
 import protocol.MintForDummiesUtils
 
-/**
-  * Main object of the GuapSwap CLI application.
-  */
 object MintForDummies extends App {
 
     // Setup Ergo Client
