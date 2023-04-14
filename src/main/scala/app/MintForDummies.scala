@@ -15,7 +15,7 @@ object MintForDummies extends App {
     val boxId: String = args(5)
     val walletAddress: String = args(6)
     val mnemonic: String = args(7)
-    val apiUrl: String = "http://213.239.193.208:9053/"
+    val apiUrl: String = if (networkTypeString.equals("mainnet")) "http://213.239.193.208:9053/" else "http://168.138.185.215:9052/"
     val networkType: NetworkType = if (networkTypeString.equals("mainnet")) NetworkType.MAINNET else NetworkType.TESTNET
     val explorerURL: String = RestApiErgoClient.getDefaultExplorerUrl(networkType)
     val ergoClient: ErgoClient = RestApiErgoClient.create(apiUrl, networkType, "", explorerURL)

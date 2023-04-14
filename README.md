@@ -20,7 +20,7 @@ Super basic NFT minter for dummies.
 5. `<token-content>` is the image data/file representing the NFT, this will be hashed in the project.
 6. `<token-content-link>` is a link to the image for everyone to look at.
 7. `<input-box-id>` is the box id of the input box to the issuer creation transaction. The created issuer box will become the input to the minting transaction itself. The transaction id of the issuer box will become the token id of your token. Note that this project assumes all addresses involved are your P2PK address.
-8. `<wallet-address>` is the wallet address under which the input eUTXO box belongs to. Make sure this box contains MORE than 0.112 ERG.
+8. `<wallet-address>` is the wallet address under which the input eUTXO box belongs to. Make sure this box contains MORE than 0.112 ERG. Note, please make sure that the address used is the first address created from your wallet, not any other derived address.
 9. `<mnemonic>` is the seed phrase used in the creation of your wallet. This is needed for signing the minting transaction.
 10. Please insert command-line arguments as strings with `""`
 11. If the transaction is submitted successfully to the network, a link to see the transaction on the explorer will be displayed. Wait until the transaction is confirmed to see token details displayed.
