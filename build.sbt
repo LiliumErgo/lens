@@ -3,7 +3,7 @@ lazy val root = project
   .settings(
     name := "minting-for-dummies",
 
-    version := "1.0.0",
+    version := "2.0.0",
 
     scalaVersion := "2.12.15",
 

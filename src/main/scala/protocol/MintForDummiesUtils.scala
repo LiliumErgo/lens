@@ -5,7 +5,8 @@ import java.time.ZoneId
 
 object MintForDummiesUtils {
 
-  final val ERGO_EXPLORER_TX_URL_PREFIX: String = "https://explorer.ergoplatform.com/en/transactions/"
+  final val ERGO_EXPLORER_TX_URL_PREFIX_MAINNET: String = "https://explorer.ergoplatform.com/en/transactions/"
+  final val ERGO_EXPLORER_TX_URL_PREFIX_TESTNET: String = "https://testnet.ergoplatform.com/en/transactions/"
 
   /**
     * Get a time-zone timestamp.
