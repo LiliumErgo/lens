@@ -3,9 +3,27 @@ package app
 import org.ergoplatform.appkit._
 import org.ergoplatform.appkit.impl.Eip4TokenBuilder
 import scorex.crypto.hash.Sha256
+
 import java.nio.charset.Charset
 
 object MintForDummiesCommands {
+
+  def print(ergoClient: ErgoClient, networkType: NetworkType, boxType: String, boxId: String): Unit = {
+
+    val boxPrinter: ErgoBoxPrinter = {
+      if (boxType.equals("eip24issuer")) {
+        EIP24IssuerBoxPrinter(ergoClient, networkType, boxId)
+      }
+      else if (boxType.equals("eip4issuance")) {
+        EIP4PictureNFTPrinter(ergoClient, networkType, boxId)
+      } else {
+        throw new IllegalArgumentException("invalid box type input")
+      }
+    }
+
+    boxPrinter.printBox()
+
+  }
 
   def mint(ergoClient: ErgoClient, tokenName: String, tokenDescription: String, tokenContent: String, tokenLink: String, boxId: String, walletAddress: String, mnemonic: String): (String, String) = {
 
