@@ -5,6 +5,7 @@ import special.collection.Coll
 
 import java.nio.charset.Charset
 import scala.collection.JavaConverters._
+import scala.reflect._
 
 
 abstract class EIP4IssuanceBoxPrinter(ergoClient: ErgoClient, networkType: NetworkType, issuanceBoxId: String) extends ErgoBoxPrinter {
@@ -42,51 +43,43 @@ abstract class EIP4IssuanceBoxPrinter(ergoClient: ErgoClient, networkType: Netwo
   private def printTokenVerboseName(): Unit = {
 
     val reg: ErgoValue[_] = registers(0)
-    val decodedTokenName: String = reg.getValue match {
-      case name: Coll[Byte] =>
-        val nameByteArray: Array[Byte] = JavaHelpers.collToByteArray(name)
-        val nameString: String = new String(nameByteArray, Charset.defaultCharset())
-        nameString
-    }
-
+    val regValue = reg.getValue
+    val classTag = reg.getType.getRType.classTag
+    val decodedTokenName: String = processStringCollection(regValue)(classTag)
     println("Register 4 (token name): " + decodedTokenName)
 
   }
 
   private def printTokenDescription(): Unit = {
 
-    val reg: ErgoValue[_] = registers(1)
-    val decodedDescrptionName: String = reg.getValue match {
-      case description: Coll[Byte] =>
-        val descriptionByteArray: Array[Byte] = JavaHelpers.collToByteArray(description)
-        val descriptionString: String = new String(descriptionByteArray, Charset.defaultCharset())
-        descriptionString
-    }
-
-    println("Register 5 (token description): " + decodedDescrptionName)
+    val reg = registers(1)
+    val regValue = reg.getValue
+    val classTag = reg.getType.getRType.classTag
+    val decodedDescriptionName: String = processStringCollection(regValue)(classTag)
+    println("Register 5 (token description): " + decodedDescriptionName)
 
   }
 
   private def printNumberOfDecimals(): Unit = {
 
-    val reg: ErgoValue[_] = registers(2)
-    val decodedDecimals: String = reg.getValue match {
-      case decimals: Coll[Byte] =>
-        val decimalsByteArray: Array[Byte] = JavaHelpers.collToByteArray(decimals)
-        val decimalsString: String = new String(decimalsByteArray, Charset.defaultCharset())
-        decimalsString
-    }
+    val reg = registers(2)
+    val regValue = reg.getValue
+    val classTag = reg.getType.getRType.classTag
+    val decodedDecimals: String = processStringCollection(regValue)(classTag)
 
     println("Register 6 (number of decimals): " + decodedDecimals)
 
   }
 
- private def printAssetType(): Unit = {
+  private def printAssetType(): Unit = {
 
     val reg = registers(3)
-    val decodedAssetType: String = reg.getValue match {
-      case assetType: Coll[Byte] =>
-        val assetTypeByteArray: Array[Byte] = JavaHelpers.collToByteArray(assetType)
+    val regValue = reg.getValue
+    val runtime = reg.getType.getRType.classTag.runtimeClass
+    val decodedAssetType: String = (regValue, runtime) match {
+      case (assetType: Coll[_], t) if t == classOf[Coll[Byte]] =>
+        val assetTypeTyped = assetType.asInstanceOf[Coll[Byte]]
+        val assetTypeByteArray: Array[Byte] = JavaHelpers.collToByteArray(assetTypeTyped)
         assetTypeByteArray.mkString("Coll(", ", ", ")")
     }
 
@@ -96,5 +89,33 @@ abstract class EIP4IssuanceBoxPrinter(ergoClient: ErgoClient, networkType: Netwo
 
   protected def printRegister8(): Unit
   protected def printRegister9(): Unit
+
+  protected def processStringCollection(coll: Any)(implicit tag: ClassTag[_]): String = {
+    (coll, tag.runtimeClass) match {
+      case (string: Coll[_], t) if t == classOf[Coll[Byte]] =>
+        val stringTyped = string.asInstanceOf[Coll[Byte]]
+        val stringByteArray: Array[Byte] = JavaHelpers.collToByteArray(stringTyped)
+        new String(stringByteArray, Charset.defaultCharset())
+    }
+  }
+
+  protected def processHash(coll: Any)(implicit tag: ClassTag[_]): String = {
+    (coll, tag.runtimeClass) match {
+
+      case (hash: Coll[_], t) if t == classOf[Coll[Byte]] =>
+
+        val hashTyped = hash.asInstanceOf[Coll[Byte]]
+        val hashByteArray: Array[Byte] = JavaHelpers.collToByteArray(hashTyped)
+        val hashString: String = hashByteArray.map("%02x".format(_)).mkString
+        hashString
+
+      case (hashColl: Coll[_], t) if t == classOf[Coll[Coll[Byte]]] =>
+
+        val hashCollTyped = hashColl.asInstanceOf[Coll[Coll[Byte]]]
+        val hashStringColl: Coll[String] = hashCollTyped.map(h => processHash(h)(ClassTag(h.getClass)))
+        hashStringColl.toString()
+    }
+
+  }
 
 }
