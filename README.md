@@ -1,5 +1,5 @@
 # minting-for-dummies
-Super basic NFT minter for dummies.
+Super basic NFT debugging tool.
 
 ### KYA
 
@@ -29,10 +29,10 @@ Super basic NFT minter for dummies.
 
 #### Printing
 
-1. Run `java -jar --print <network-type> <box-type> <nft-box-id>`
+1. Run `java -jar --print <network-type> <box-type> <box-id>`
 2. `<network-type>` is the network you want to use to execute this transaction, either `"mainnet"` or `"testnet"`. If you select testnet, please make sure the requisite command-line arguments are valid testnet arguments.
-3. `<box-type>` is the token mint box type, either `"eip24issuer"` or `"eip4issuance"`.
-4. `<nft-box-id>` is the box id corresponding to the box you want to print.
+3. `<box-type>` is the token mint box type, one of: `"eip4issuance"`, `"eip24issuer"`, `"eip34issuer"`.
+4. `<box-id>` is the box id of the box you want to print, corresponding to the box-type parameter.
 
 ### Fees
 
