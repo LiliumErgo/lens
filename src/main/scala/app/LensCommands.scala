@@ -3,25 +3,29 @@ package app
 import org.ergoplatform.appkit._
 import org.ergoplatform.appkit.impl.Eip4TokenBuilder
 import scorex.crypto.hash.Sha256
+import org.guapswap._
 
 import java.nio.charset.Charset
 
-object MintForDummiesCommands {
+object LensCommands {
 
   def print(ergoClient: ErgoClient, networkType: NetworkType, boxType: String, boxId: String): Unit = {
 
-    val boxPrinter: ErgoBoxPrinter = {
-      if (boxType.equals("eip24issuer")) {
-        EIP24IssuerBoxPrinter(ergoClient, networkType, boxId)
-      }
-      else if (boxType.equals("eip4issuance")) {
-        EIP4PictureNFTPrinter(ergoClient, networkType, boxId)
+    ergoClient.execute(ctx => {
+
+      val box = ctx.getDataSource.getBoxById(boxId, false, true)
+
+      if (boxType.equals("eip4issuance")) {
+        sigmabuilders.printers.minting_printers.EIP4PictureNFTPrinter.printDecodedBox(box, networkType)
+      } else if (boxType.equals("eip24issuer")) {
+        sigmabuilders.printers.minting_printers.EIP24IssuerBoxPrinter.printDecodedBox(box, networkType)
+      } else if (boxType.equals("eip34issuer")) {
+        sigmabuilders.printers.minting_printers.EIP34IssuerBoxPrinter.printDecodedBox(box, networkType)
       } else {
         throw new IllegalArgumentException("invalid box type input")
       }
-    }
 
-    boxPrinter.printBox()
+    })
 
   }
 

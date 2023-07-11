@@ -1,17 +1,41 @@
-lazy val root = project
-  .in(file("."))
-  .settings(
-    name := "minting-for-dummies",
+import dependencies._
 
-    version := "4.0.0",
+inThisBuild(List(
+  organization := "io.liliumergo", // group id
+  name := "lens", // artifact id
+  version := "5.0.0",
+  homepage := Some(url("https://liliumergo.io")),
+  licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT")),
+  description := "Super basic NFT debugging tool. ",
+  scmInfo := Some(
+    ScmInfo(
+      url("https://github.com/LiliumErgo/lens"),
+      "scm:git@github.com:LiliumErgo/lens.git"
+    )
+  ),
+  developers := List(
+    Developer(
+      "lgd",
+      "Luca D'Angelo",
+      "ldgaetano@protonmail.com",
+      url("https://github.com/lucagdangelo")
+    )
+  ),
 
-    scalaVersion := "2.12.15",
+  libraryDependencies ++=
+    Ergo ++
+    GuapSwap ++
+    Testing
+  ,
 
-    libraryDependencies ++= Seq(
-      "org.ergoplatform" %% "ergo-appkit" % "5.0.1",
-    ),
+  resolvers := List(
+    "Sonatype OSS Releases" at "https://s01.oss.sonatype.org/content/repositories/releases",
+    "Sonatype OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots"
+  ),
 
-    assembly / assemblyJarName := s"${name.value}-${version.value}.jar",
-    assembly / assemblyOutputPath := file(s"./${name.value}-${version.value}.jar/")
+  versionScheme := Some ("semver-spec"),
+  assembly / assemblyJarName := s"${name.value}-${version.value}.jar",
+  assembly / assemblyOutputPath := file(s"./${name.value}-${version.value}.jar/")
 
-  )
+
+))
