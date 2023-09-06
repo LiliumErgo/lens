@@ -2,16 +2,63 @@ package app
 
 import org.ergoplatform.appkit._
 import org.ergoplatform.appkit.impl.Eip4TokenBuilder
+import org.ergoplatform.explorer.client.model.OutputInfo
 import scorex.crypto.hash.Sha256
 import org.guapswap._
+import scorex.util.encode.Base16
+import utils.ExplorerApi
+import utils.LensUtils.{LILIUM_COLLECTION_ISSUANCE_ERGOTREE_TEMPLATE_HEX, LILIUM_STATE_BOX_ERGOTREE_TEMPLATE_HEX, SKYHARBOR_SALE_BOX_ERGOTREE_TEMPLATE_HEX, getErgoTreeTemplateHex}
 
 import java.nio.charset.Charset
 
 object LensCommands {
+  def snapshot(networkType: NetworkType, nodeUrl: String, explorerUrl: String, collectionId: String): Unit = {
+
+    // snapshot based on marketplace type
+    // 1. get lilium snapshot based on collection token id
+    // - search all boxes with given collection token id, minus the state box
+    // 2. get corresponding skyharbor listings (past/present)
+    val api: ExplorerApi = ExplorerApi(nodeUrl, explorerUrl)
+
+    var response: Array[OutputInfo] = api.getBoxesByTokenID(collectionId, 0, 100)
+    var set: Array[OutputInfo] = Array()
+    var offset: Integer = 0
+
+    while (response.nonEmpty) {
+
+      set = set ++ response
+      offset += response.length
+      response = api.getBoxesByTokenID(collectionId, offset, 100)
+
+    }
+
+    val collectionWithoutState = set.filter(output => {
+      val template = getErgoTreeTemplateHex(output.getErgoTree)
+      !template.equals(LILIUM_STATE_BOX_ERGOTREE_TEMPLATE_HEX) && !template.equals(LILIUM_COLLECTION_ISSUANCE_ERGOTREE_TEMPLATE_HEX)
+    })
+
+    val boxIds = collectionWithoutState.map(output => output.getBoxId)
+    val nftBoxes = boxIds.map(id => api.getUnspentBoxesByTokenID(id, 0, 1)(0))
+
+    val marketplaceFiltered = nftBoxes.map(box => {
+      val ergotree = box.getErgoTree
+      val template = getErgoTreeTemplateHex(ergotree)
+      if (template.equals(SKYHARBOR_SALE_BOX_ERGOTREE_TEMPLATE_HEX)) {
+        val regValue = box.getAdditionalRegisters.get("R5").renderedValue
+        Address.fromPropositionBytes(networkType, Base16.decode(regValue).get).asP2PK().toString()
+      } else {
+        box.getAddress
+      }
+    })
+
+    marketplaceFiltered.foreach(add => System.out.println(add))
+
+  }
+
 
   def print(ergoClient: ErgoClient, networkType: NetworkType, boxType: String, boxId: String): Unit = {
 
-    ergoClient.execute(ctx => {
+    ergoClient.execute((ctx: BlockchainContext) => {
 
       val box = ctx.getDataSource.getBoxById(boxId, false, true)
 

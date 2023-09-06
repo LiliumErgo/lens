@@ -1,4 +1,4 @@
-# minting-for-dummies
+# LENS
 Super basic NFT debugging tool.
 
 ### KYA
@@ -33,6 +33,12 @@ Super basic NFT debugging tool.
 2. `<network-type>` is the network you want to use to execute this transaction, either `"mainnet"` or `"testnet"`. If you select testnet, please make sure the requisite command-line arguments are valid testnet arguments.
 3. `<box-type>` is the token mint box type, one of: `"eip4issuance"`, `"eip24issuer"`, `"eip34issuer"`.
 4. `<box-id>` is the box id of the box you want to print, corresponding to the box-type parameter.
+
+#### Snapshot
+
+1. Run `java -jar --snapshot <network-type> <collection-id>`
+2. `<network-type>` is the network you want to use to execute this transaction, either `"mainnet"` or `"testnet"`. If you select testnet, please make sure the requisite command-line arguments are valid testnet arguments.
+3. `<collection-id>` is the collection token id.
 
 ### Fees
 
