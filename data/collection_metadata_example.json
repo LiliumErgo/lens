@@ -1,0 +1,28 @@
+{
+  "collectionName": "",
+  "collectionDescription": "",
+  "collectionCategory": "",
+  "collectionLogoUrl": "",
+  "collectionFeaturedImageUrl": "",
+  "collectionBannerImageUrl": "",
+  "collectionSize": 666,
+  "royalties": [
+    {
+      "royaltyAddress": "",
+      "royaltyPercentage": 50
+    }
+  ],
+  "socials": [
+    {
+      "socialName": "",
+      "socialUrl": ""
+    }
+  ],
+  "mintingExpiry": -1,
+  "additionalInformation": [
+    {
+      "infoKey": "",
+      "infoValue": ""
+    }
+  ]
+}

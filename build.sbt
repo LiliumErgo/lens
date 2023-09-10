@@ -6,7 +6,7 @@ inThisBuild(List(
   version := "5.0.0",
   homepage := Some(url("https://liliumergo.io")),
   licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT")),
-  description := "Super basic NFT debugging tool. ",
+  description := "Ergo NFT debugging tool. ",
   scmInfo := Some(
     ScmInfo(
       url("https://github.com/LiliumErgo/lens"),
@@ -22,11 +22,7 @@ inThisBuild(List(
     )
   ),
 
-  libraryDependencies ++=
-    Ergo ++
-    GuapSwap ++
-    Testing
-  ,
+  libraryDependencies ++= Ergo ++ GuapSwap ++ Testing ++ Sttp ++ Circe,
 
   resolvers := List(
     "Sonatype OSS Releases" at "https://s01.oss.sonatype.org/content/repositories/releases",

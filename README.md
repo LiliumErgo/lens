@@ -1,5 +1,5 @@
 # LENS
-Super basic NFT debugging tool.
+Ergo NFT debugging tool.
 
 ### KYA
 
@@ -13,30 +13,26 @@ Super basic NFT debugging tool.
 
 ### Usage
 
-#### Minting
+#### Mint
 
-1. Run `java -jar minting-for-dummies-<version>.jar --mint <network-type> <token-name> <token-description> <token-content> <token-content-link> <input-box-id> <wallet-address> <mnemonic>`
+1. Run `java -jar lens-<version>.jar --mint <network-type> <mint-type> <mnemonic> <wallet-address>`
 2. `<network-type>` is the network you want to use to execute this transaction, either `"mainnet"` or `"testnet"`. If you select testnet, please make sure the requisite command-line arguments are valid testnet arguments.
-3. `<token-name` is the name of the token you would like your NFT to have.
-4. `<token-description>` is the brief description of the token.
-5. `<token-content>` is the image data/file representing the NFT, this will be hashed in the project.
-6. `<token-content-link>` is a link to the image for everyone to look at.
-7. `<input-box-id>` is the box id of the input box to the issuer creation transaction. The created issuer box will become the input to the minting transaction itself. The transaction id of the issuer box will become the token id of your token. Note that this project assumes all addresses involved are your P2PK address.
-8. `<wallet-address>` is the wallet address under which the input eUTXO box belongs to. Make sure this box contains MORE than 0.112 ERG. Note, please make sure that the address used is the first address created from your wallet, not any other derived address.
-9. `<mnemonic>` is the seed phrase used in the creation of your wallet. This is needed for signing the minting transaction.
-10. Please insert command-line arguments as strings with `""`
-11. If the transaction is submitted successfully to the network, a link to see the transaction on the explorer will be displayed. Wait until the transaction is confirmed to see token details displayed.
+3. `<mint-type>` is the mint type, either `"single"` or `"collection"`.
+4. `<mnemonic>` is your seed phrase used for signing all the required transactions.
+5. `<wallet-address>` is the address where all your funds come from and where the NFTs will go. This should correspond to the mnemonic, but it can be a derived address if you wish.
+6. Please make sure to place the NFT metadata file within the `data` folder and call it `nft_metadata.json`. If you are doing a collection mint, please include the collection metadata in a file called `collection_metadata.json`.
+7. If the transaction is submitted successfully to the network, a link to see the transaction on the explorer will be displayed. Wait until the transaction is confirmed to see token details displayed.
 
-#### Printing
+#### Print
 
-1. Run `java -jar --print <network-type> <box-type> <box-id>`
+1. Run `java -jar lens-<version>.jar --print <network-type> <box-type> <box-id>`
 2. `<network-type>` is the network you want to use to execute this transaction, either `"mainnet"` or `"testnet"`. If you select testnet, please make sure the requisite command-line arguments are valid testnet arguments.
 3. `<box-type>` is the token mint box type, one of: `"eip4issuance"`, `"eip24issuer"`, `"eip34issuer"`.
 4. `<box-id>` is the box id of the box you want to print, corresponding to the box-type parameter.
 
 #### Snapshot
 
-1. Run `java -jar --snapshot <network-type> <collection-id>`
+1. Run `java -jar lens-<version>.jar --snapshot <network-type> <collection-id>`
 2. `<network-type>` is the network you want to use to execute this transaction, either `"mainnet"` or `"testnet"`. If you select testnet, please make sure the requisite command-line arguments are valid testnet arguments.
 3. `<collection-id>` is the collection token id.
 

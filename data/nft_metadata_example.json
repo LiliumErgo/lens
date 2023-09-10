@@ -1,0 +1,30 @@
+[
+  {
+    "name": "",
+    "description": "",
+    "image": "",
+    "imageSHA256": "",
+    "attributes": [
+      {
+        "trait_type": "",
+        "value": ""
+      }
+    ],
+    "levels": [
+      {
+        "trait_type": "",
+        "max_value": "",
+        "value": ""
+      }
+    ],
+    "stats": [
+      {
+        "trait_type": "",
+        "max_value": "",
+        "value": ""
+      }
+    ],
+    "assetType": "",
+    "explicit": true
+  }
+]

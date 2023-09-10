@@ -1,11 +1,15 @@
 package utils
 
-import org.ergoplatform.appkit.{Address, ErgoTreeTemplate}
+import io.circe.Decoder
+import io.circe.generic.semiauto.deriveDecoder
+import org.ergoplatform.appkit.ErgoTreeTemplate
 import scorex.util.encode.Base16
-import sigmastate.Values.ErgoTree
 
 import java.time.LocalDateTime
 import java.time.ZoneId
+import sttp.client4._
+import sttp.client4.circe.asJson
+import sttp.client4.httpurlconnection.HttpURLConnectionBackend
 
 object LensUtils {
 
@@ -16,6 +20,12 @@ object LensUtils {
   final val LILIUM_COLLECTION_ISSUANCE_ERGOTREE_TEMPLATE_HEX: String = "d803d601b2a5730000d602e4e30163d603c57202ea02d1ed93c27201e4e3000eed93b2db6308720173010086027203e4c672020905938cb2db6308a77302000172037303"
 
   final val SKYHARBOR_SALE_BOX_ERGOTREE_TEMPLATE_HEX: String = "95ed91b1a5730094cbc2b2a47301007302d804d601e4c6a70663d602c672010404d603e4c6a70405d6049d72037303d195e67202d804d605b2a5730400d606e47202d6079d9c72037e7206057305d608b2a57306009683070192c17205999972037204720793c27205e4c6a7050e93e4c67205040ec5a792c17208720493c27208730795eded947207730891720673098f7206730ad801d609b2a5730b00ed92c17209720793c27209c27201730c93c572018cb2db6308a7730d0001d802d605b2a5730e00d606b2a5730f009683060192c17205997203720493c27205e4c6a7050e93e4c67205040ec5a792c17206720493c27206731093c572018cb2db6308a773110001cde4c6a70707"
+
+  final val LILIUM_MAINNET_FEE_ADDRESS: String = ""
+  final val LILIUM_TESTNET_FEE_ADDRESS: String = ""
+
+  final val LILIUM_COLLECTION_CONFIG_PATH: String = "./data/collection_metadata.json"
+  final val LILIUM_NFT_METADATA_CONFIG_PATH: String = "./data/nft_metadata.json"
 
   /**
     * Get a time-zone timestamp.
@@ -41,6 +51,48 @@ object LensUtils {
     val templatebytes = ErgoTreeTemplate.fromErgoTreeBytes(bytes)
     val encoded = templatebytes.getEncodedBytes
     encoded
+  }
+
+  def liliumFeeInUSD(collectionSize: Long): Double = {
+
+    val alpha: Double = 54.10
+    val beta: Double = 0.03
+
+    val phi: Double = math.floor(alpha * math.log(beta * collectionSize + 1))
+
+    phi
+
+  }
+
+  def liliumFeeInNanoERG(collectionSize: Long): Long = {
+
+
+    case class Ergo(usd: Double)
+    case class ErgoPrice(ergo: Ergo)
+    implicit val jsonDecoder: Decoder[ErgoPrice] = deriveDecoder[ErgoPrice]
+
+    val usdFee: Double = liliumFeeInUSD(collectionSize)
+
+    val backend = HttpURLConnectionBackend()
+
+    val request = basicRequest.get(uri"https://api.coingecko.com/api/v3/simple/price?ids=ergo&vs_currencies=usd%22").response(asJson[ErgoPrice])
+
+    val response = request.send(backend)
+
+    try {
+
+      val usdPerErg: Double = response.body.right.get.ergo.usd
+
+      val ergs = usdFee / usdPerErg
+
+      val nanoErgs = (ergs * 1000000000).toLong
+
+      nanoErgs
+
+    } catch {
+      case e: Throwable => throw e
+    }
+
   }
 
 }

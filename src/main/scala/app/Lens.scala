@@ -30,22 +30,34 @@ object Lens extends App {
 
     } else if (operation.equals("--mint")) {
 
-        val tokenName: String = args(2)
-        val tokenDescription: String = args(3)
-        val tokenContent: String = args(4)
-        val tokenLink: String = args(5)
-        val boxId: String = args(6)
-        val walletAddress: String = args(7)
-        val mnemonic: String = args(8)
+        val mintType: String = args(2)
+        val mnemonic: String = args(3)
+        val walletAddress: String = args(4)
 
-        println(Console.YELLOW + s"========== ${LensUtils.getTimeStamp("UTC")} LENS TX INITIATED ==========" + Console.RESET)
+        var liliumTxIds: Array[(String, String)] = Array()
 
-        val mintForDummiesTxIds: (String, String) = LensCommands.mint(ergoClient, tokenName, tokenDescription, tokenContent, tokenLink, boxId, walletAddress, mnemonic)
+        if (mintType.equals("single")) {
 
-        println(Console.GREEN + s"========== ${LensUtils.getTimeStamp("UTC")} LENS TX SUCCESSFUL ==========" + Console.RESET)
+            println(Console.YELLOW + s"========== ${LensUtils.getTimeStamp("UTC")} LENS SINGLE MINT TX INITIATED ==========" + Console.RESET)
 
-        // Print tx link to the user
-        println(Console.BLUE + s"========== ${LensUtils.getTimeStamp("UTC")} VIEW LENS ISSUER CREATION AND MINT TXS IN THE ERGO-EXPLORER WITH THE LINKS BELOW ==========" + Console.RESET)
+            liliumTxIds = LensCommands.mint(ergoClient, networkType, mnemonic, walletAddress)
+
+            println(Console.GREEN + s"========== ${LensUtils.getTimeStamp("UTC")} LENS SINGLE MINT TX SUCCESSFUL ==========" + Console.RESET)
+
+        } else if (mintType.equals("collection")) {
+
+            println(Console.YELLOW + s"========== ${LensUtils.getTimeStamp("UTC")} LENS COLLECTION MINT TX INITIATED ==========" + Console.RESET)
+
+            liliumTxIds = LensCommands.mintCollecion(ergoClient, networkType, mnemonic, walletAddress)
+
+            println(Console.GREEN + s"========== ${LensUtils.getTimeStamp("UTC")} LENS COLLECTION MINT TX SUCCESSFUL ==========" + Console.RESET)
+
+        } else {
+            throw new IllegalArgumentException("invalid mint type variable")
+        }
+
+        // Print tx links to the user
+        println(Console.BLUE + s"========== ${LensUtils.getTimeStamp("UTC")} VIEW LENS MINT TXS IN THE ERGO-EXPLORER WITH THE LINKS BELOW ==========" + Console.RESET)
         if (networkTypeString.equals("mainnet")) {
             println(LensUtils.ERGO_EXPLORER_TX_URL_PREFIX_MAINNET + mintForDummiesTxIds._1)
             println(LensUtils.ERGO_EXPLORER_TX_URL_PREFIX_MAINNET + mintForDummiesTxIds._2)
@@ -53,6 +65,7 @@ object Lens extends App {
             println(LensUtils.ERGO_EXPLORER_TX_URL_PREFIX_TESTNET + mintForDummiesTxIds._1)
             println(LensUtils.ERGO_EXPLORER_TX_URL_PREFIX_TESTNET + mintForDummiesTxIds._2)
         }
+
         exit(0)
 
     } else if (operation.equals("--snapshot")) {
@@ -62,6 +75,7 @@ object Lens extends App {
         println(Console.YELLOW + s"========== ${LensUtils.getTimeStamp("UTC")} LENS SNAPSHOT INITIATED ==========" + Console.RESET)
         LensCommands.snapshot(networkType, nodeUrl, explorerUrl, collectionId)
         println(Console.GREEN + s"========== ${LensUtils.getTimeStamp("UTC")} LENS SNAPSHOT SUCCESSFUL ==========" + Console.RESET)
+
         exit(0)
 
     } else {
