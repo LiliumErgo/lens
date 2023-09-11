@@ -15,13 +15,14 @@ Ergo NFT debugging tool.
 
 #### Mint
 
-1. Run `java -jar lens-<version>.jar --mint <network-type> <mint-type> <mnemonic> <wallet-address>`
+1. Run `java -jar lens-<version>.jar --mint <network-type> <mint-type> <signer-mnemonic> <signer-wallet-address> <recipient-address>`
 2. `<network-type>` is the network you want to use to execute this transaction, either `"mainnet"` or `"testnet"`. If you select testnet, please make sure the requisite command-line arguments are valid testnet arguments.
 3. `<mint-type>` is the mint type, either `"single"` or `"collection"`.
-4. `<mnemonic>` is your seed phrase used for signing all the required transactions.
-5. `<wallet-address>` is the address where all your funds come from and where the NFTs will go. This should correspond to the mnemonic, but it can be a derived address if you wish.
-6. Please make sure to place the NFT metadata file within the `data` folder and call it `nft_metadata.json`. If you are doing a collection mint, please include the collection metadata in a file called `collection_metadata.json`.
-7. If the transaction is submitted successfully to the network, a link to see the transaction on the explorer will be displayed. Wait until the transaction is confirmed to see token details displayed.
+4. `<signer-mnemonic>` is your seed phrase used for signing all the required transactions.
+5. `<signer-wallet-address>` is the address where all your funds come from. This should correspond to the mnemonic, but it can be a derived address if you wish.
+6. `<recipient-address>` is the address where all the NFTs will go.
+7. Please make sure to place the NFT metadata file within the `data` folder and call it `nft_metadata.json`. If you are doing a collection mint, please include the collection metadata in a file called `collection_metadata.json`.
+8. If the transaction is submitted successfully to the network, a link to see the transaction on the explorer will be displayed. Wait until the transaction is confirmed to see token details displayed.
 
 #### Print
 

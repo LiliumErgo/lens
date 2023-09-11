@@ -101,14 +101,14 @@ object LensUtils {
 
   }
 
-  def getNFTIssuer(collectionConfig: LensCollectionConfig, nftConfig: LensNFTConfig, collectionIssuance: InputBox, minerFee: Long, address: Address, index: Int)(implicit txBuilder: UnsignedTransactionBuilder): OutBox = {
+  def getNFTIssuer(collectionConfig: LensCollectionConfig, nftConfig: LensNFTConfig, collectionIssuance: InputBox, minerFee: Long, signer: Address)(implicit txBuilder: UnsignedTransactionBuilder): OutBox = {
 
     val collectionId = collectionIssuance.getTokens.get(0).getId
     val collectionToken = new ErgoToken(collectionId, 1)
 
     val nftIssuer = txBuilder.outBoxBuilder()
-      .value(10000000)
-      .contract(address.toErgoContract)
+      .value(10000000 + minerFee)
+      .contract(signer.toErgoContract)
       .tokens(collectionToken)
       .registers(
         sigmabuilders.encoders.minting_encoders.EIP24IssuerEncoder.encodeR4(nftConfig.getArtworkStandardVersion),
@@ -127,13 +127,13 @@ object LensUtils {
 
   }
 
-  def mintNFT(nftConfig: LensNFTConfig, nftIssuer: InputBox, minerFee: Long, address: Address)(implicit ctx: BlockchainContext): UnsignedTransaction = {
+  def mintNFT(nftConfig: LensNFTConfig, nftIssuer: InputBox, minerFee: Long, signer: Address, recipient: Address)(implicit ctx: BlockchainContext): UnsignedTransaction = {
 
     val mintTxBuilder = ctx.newTxBuilder()
 
     val nftIssuance = mintTxBuilder.outBoxBuilder()
       .value(nftIssuer.getValue - minerFee)
-      .contract(address.toErgoContract)
+      .contract(recipient.toErgoContract)
       .mintToken(
         Eip4TokenBuilder.buildNftPictureToken(
           nftIssuer.getId.toString,
@@ -152,7 +152,7 @@ object LensUtils {
       .addInputs(nftIssuer)
       .addOutputs(nftIssuance)
       .fee(minerFee)
-      .sendChangeTo(address)
+      .sendChangeTo(signer)
       .build()
 
     mintTx

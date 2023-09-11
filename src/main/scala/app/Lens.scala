@@ -31,8 +31,9 @@ object Lens extends App {
     } else if (operation.equals("--mint")) {
 
         val mintType: String = args(2)
-        val mnemonic: String = args(3)
-        val walletAddress: String = args(4)
+        val signerMnemonic: String = args(3)
+        val signerAddress: String = args(4)
+        val recipientAddress: String = args(5)
 
         var liliumTxIds: Array[String] = Array()
 
@@ -48,7 +49,7 @@ object Lens extends App {
 
             println(Console.YELLOW + s"========== ${LensUtils.getTimeStamp("UTC")} LENS COLLECTION MINT TX INITIATED ==========" + Console.RESET)
 
-            liliumTxIds = LensCommands.mintCollection(ergoClient, networkTypeString, mnemonic, walletAddress)
+            liliumTxIds = LensCommands.mintCollection(ergoClient, networkTypeString, signerMnemonic, signerAddress, recipientAddress)
 
             println(Console.GREEN + s"========== ${LensUtils.getTimeStamp("UTC")} LENS COLLECTION MINT TX SUCCESSFUL ==========" + Console.RESET)
 

@@ -222,7 +222,7 @@ object LensCommands {
 //    (mintForDummiesTxIds._1.replaceAll("\"", ""), mintForDummiesTxIds._2.replaceAll("\"", ""))
 //  }
 
-  def mintCollection(ergoClient: ErgoClient, networkType: String, mnemonic: String, walletAddress: String): Array[String] = {
+  def mintCollection(ergoClient: ErgoClient, networkType: String, signerMnemonic: String, signerAddress: String, recipientAddress: String): Array[String] = {
 
     // Generate blockchain context
     val liliumTxIds: Array[String] = ergoClient.execute((ctx: BlockchainContext) => {
@@ -230,7 +230,7 @@ object LensCommands {
       // create prover
       val prover: ErgoProver = ctx.newProverBuilder()
         .withMnemonic(
-          SecretString.create(mnemonic),
+          SecretString.create(signerMnemonic),
           SecretString.empty(),
           false
         )
@@ -248,8 +248,9 @@ object LensCommands {
       val collectionIssuerTxBuilder: UnsignedTransactionBuilder = ctx.newTxBuilder()
 
       // 2. Create the input boxes.
-      val userAddress: Address = Address.create(walletAddress)
-      val inputs: Array[InputBox] = ctx.getDataSource.getUnspentBoxesFor(userAddress, 0, 100).asScala.toArray
+      val signer: Address = Address.create(signerAddress)
+      val recipient: Address = Address.create(recipientAddress)
+      val inputs: Array[InputBox] = ctx.getDataSource.getUnspentBoxesFor(signer, 0, 100).asScala.toArray
       val minerFee: Long = Parameters.MinFee
       val liliumFee: Long = liliumFeeInNanoERG(collectionConfig.getCollectionSize)
       val liliumAddress: Address = Address.create(if (networkType.equals("mainnet")) LILIUM_MAINNET_FEE_ADDRESS else LILIUM_TESTNET_FEE_ADDRESS)
@@ -258,7 +259,7 @@ object LensCommands {
       // 3. Create the collection issuer output.
       val collectionIssuer = collectionIssuerTxBuilder.outBoxBuilder()
         .value(mintCost)
-        .contract(userAddress.toErgoContract)
+        .contract(signer.toErgoContract)
         .registers(
           sigmabuilders.encoders.minting_encoders.EIP34IssuerEncoder.encodeR4(collectionConfig.getCollectionStandardVersion),
           sigmabuilders.encoders.minting_encoders.EIP34IssuerEncoder.encodeR5(collectionConfig.getCollectionInfo),
@@ -279,10 +280,10 @@ object LensCommands {
         .addInputs(inputs:_*)
         .addOutputs(collectionIssuer, liliumFeeBox)
         .fee(minerFee)
-        .sendChangeTo(userAddress)
+        .sendChangeTo(signer)
         .build()
 
-      transactions ++ Array(unsignedCollectionIssuerTx)
+      transactions = transactions ++ Array(unsignedCollectionIssuerTx)
 
       // 6. Create the collection issuance transactions.
       val collectionIssuanceTxBuilder: UnsignedTransactionBuilder = ctx.newTxBuilder()
@@ -293,7 +294,7 @@ object LensCommands {
       // 8. Build the collection issuance output
       val collectionIssuance: OutBox = collectionIssuerTxBuilder.outBoxBuilder()
         .value(collectionIssuerInput.getValue - minerFee)
-        .contract(userAddress.toErgoContract)
+        .contract(signer.toErgoContract)
         .mintToken(
           Eip4TokenBuilder.buildNftArtworkCollectionToken(
             collectionIssuerInput.getId.toString,
@@ -310,9 +311,10 @@ object LensCommands {
         .addInputs(collectionIssuerInput)
         .addOutputs(collectionIssuance)
         .fee(minerFee)
+        .sendChangeTo(signer)
         .build()
 
-      transactions ++ Array(unsignedCollectionIssuanceTx)
+      transactions = transactions ++ Array(unsignedCollectionIssuanceTx)
 
       // 10. Build the minting transactions
       val numOfStages = collectionConfig.getCollectionSize / 100
@@ -320,17 +322,17 @@ object LensCommands {
       var collectionIssuanceLoop = collectionIssuance.convertToInputWith(unsignedCollectionIssuanceTx.getId, 0)
       var shift = 0
 
-      for (i <- 0 to numOfStages-1) {
+      for (i <- 0 until numOfStages) {
 
-        val issuerBoxes: Array[OutBox] = Array()
+        var issuerBoxes: Array[OutBox] = Array()
         val stageTxBuilder = ctx.newTxBuilder()
 
         // get the nft issuer boxes
         for (j <- 0 until step) {
 
-          val issuer = getNFTIssuer(collectionConfig, nftMetadataConfig.apply(j + shift), collectionIssuanceLoop, minerFee, userAddress, j)(stageTxBuilder)
+          val issuer = getNFTIssuer(collectionConfig, nftMetadataConfig.apply(j + shift), collectionIssuanceLoop, minerFee, signer)(stageTxBuilder)
 
-          issuerBoxes ++ Array(issuer)
+          issuerBoxes = issuerBoxes ++ Array(issuer)
 
         }
 
@@ -339,10 +341,10 @@ object LensCommands {
           .addInputs(collectionIssuanceLoop)
           .addOutputs(issuerBoxes:_*)
           .fee(minerFee)
-          .sendChangeTo(userAddress)
+          .sendChangeTo(signer)
           .build()
 
-        transactions ++ Array(stageTx)
+        transactions = transactions ++ Array(stageTx)
 
         // mint the nfts using the issuer boxes
         for (k <- issuerBoxes.indices) {
@@ -352,9 +354,9 @@ object LensCommands {
           val issuerInput = issuer.convertToInputWith(stageTx.getId, k.toShort)
 
           // get the unsigned transaction
-          val mintTx = mintNFT(nftMetadataConfig.apply(k + shift), issuerInput, minerFee, userAddress)(ctx)
+          val mintTx = mintNFT(nftMetadataConfig.apply(k + shift), issuerInput, minerFee, signer, recipient)(ctx)
 
-          transactions ++ Array(mintTx)
+          transactions = transactions ++ Array(mintTx)
 
         }
 
@@ -366,7 +368,7 @@ object LensCommands {
       }
 
       // process unsigned transactions
-      val ids: Array[String] = Array()
+      var ids: Array[String] = Array()
       transactions.foreach(utx => {
 
         // sign
@@ -375,7 +377,7 @@ object LensCommands {
         // submit
         val txid = ctx.sendTransaction(stx)
 
-        ids ++ Array(txid)
+        ids = ids ++ Array(txid)
 
       })
 
