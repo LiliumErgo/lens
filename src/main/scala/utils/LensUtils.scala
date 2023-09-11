@@ -1,8 +1,12 @@
 package utils
 
-import io.circe.Decoder
-import io.circe.generic.semiauto.deriveDecoder
-import org.ergoplatform.appkit.ErgoTreeTemplate
+import configs.collection_config.LensCollectionConfig
+import configs.nft_config.LensNFTConfig
+
+import org.guapswap._
+
+import org.ergoplatform.appkit.impl.Eip4TokenBuilder
+import org.ergoplatform.appkit.{Address, BlockchainContext, ErgoToken, ErgoTreeTemplate, InputBox, OutBox, UnsignedTransaction, UnsignedTransactionBuilder}
 import scorex.util.encode.Base16
 
 import java.time.LocalDateTime
@@ -10,6 +14,8 @@ import java.time.ZoneId
 import sttp.client4._
 import sttp.client4.circe.asJson
 import sttp.client4.httpurlconnection.HttpURLConnectionBackend
+import io.circe.Decoder
+import io.circe.generic.semiauto.deriveDecoder
 
 object LensUtils {
 
@@ -92,6 +98,64 @@ object LensUtils {
     } catch {
       case e: Throwable => throw e
     }
+
+  }
+
+  def getNFTIssuer(collectionConfig: LensCollectionConfig, nftConfig: LensNFTConfig, collectionIssuance: InputBox, minerFee: Long, address: Address, index: Int)(implicit txBuilder: UnsignedTransactionBuilder): OutBox = {
+
+    val collectionId = collectionIssuance.getTokens.get(0).getId
+    val collectionToken = new ErgoToken(collectionId, 1)
+
+    val nftIssuer = txBuilder.outBoxBuilder()
+      .value(10000000)
+      .contract(address.toErgoContract)
+      .tokens(collectionToken)
+      .registers(
+        sigmabuilders.encoders.minting_encoders.EIP24IssuerEncoder.encodeR4(nftConfig.getArtworkStandardVersion),
+        sigmabuilders.encoders.minting_encoders.EIP24IssuerEncoder.encodeR5(collectionConfig.getCollectionRoyalties),
+        sigmabuilders.encoders.minting_encoders.EIP24IssuerEncoder.encodeR6(
+          nftConfig.getProperties,
+          nftConfig.getLevels,
+          nftConfig.getStats
+        ),
+        sigmabuilders.encoders.minting_encoders.EIP24IssuerEncoder.encodeR7(collectionId),
+        sigmabuilders.encoders.minting_encoders.EIP24IssuerEncoder.encodeR8(nftConfig.getAdditionalInfo)
+      )
+      .build()
+
+    nftIssuer
+
+  }
+
+  def mintNFT(nftConfig: LensNFTConfig, nftIssuer: InputBox, minerFee: Long, address: Address)(implicit ctx: BlockchainContext): UnsignedTransaction = {
+
+    val mintTxBuilder = ctx.newTxBuilder()
+
+    val nftIssuance = mintTxBuilder.outBoxBuilder()
+      .value(nftIssuer.getValue - minerFee)
+      .contract(address.toErgoContract)
+      .mintToken(
+        Eip4TokenBuilder.buildNftPictureToken(
+          nftIssuer.getId.toString,
+          1,
+          nftConfig.getNFTName,
+          nftConfig.getNFTDescription,
+          0,
+          nftConfig.getImageHash.getBytes("utf-8"),
+          nftConfig.getImageLink
+
+        )
+      )
+      .build()
+
+    val mintTx = mintTxBuilder
+      .addInputs(nftIssuer)
+      .addOutputs(nftIssuance)
+      .fee(minerFee)
+      .sendChangeTo(address)
+      .build()
+
+    mintTx
 
   }
 

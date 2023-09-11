@@ -3,7 +3,7 @@ package app
 import configs.collection_config.LensCollectionConfig
 import configs.nft_config.LensNFTConfig
 import utils.ExplorerApi
-import utils.LensUtils.{LILIUM_COLLECTION_CONFIG_PATH, LILIUM_COLLECTION_ISSUANCE_ERGOTREE_TEMPLATE_HEX, LILIUM_MAINNET_FEE_ADDRESS, LILIUM_NFT_METADATA_CONFIG_PATH, LILIUM_STATE_BOX_ERGOTREE_TEMPLATE_HEX, LILIUM_TESTNET_FEE_ADDRESS, SKYHARBOR_SALE_BOX_ERGOTREE_TEMPLATE_HEX, getErgoTreeTemplateHex, liliumFeeInNanoERG}
+import utils.LensUtils.{LILIUM_COLLECTION_CONFIG_PATH, LILIUM_COLLECTION_ISSUANCE_ERGOTREE_TEMPLATE_HEX, LILIUM_MAINNET_FEE_ADDRESS, LILIUM_NFT_METADATA_CONFIG_PATH, LILIUM_STATE_BOX_ERGOTREE_TEMPLATE_HEX, LILIUM_TESTNET_FEE_ADDRESS, SKYHARBOR_SALE_BOX_ERGOTREE_TEMPLATE_HEX, getErgoTreeTemplateHex, getNFTIssuer, liliumFeeInNanoERG, mintNFT}
 import org.guapswap._
 import org.ergoplatform.appkit._
 import org.ergoplatform.appkit.impl.Eip4TokenBuilder
@@ -79,153 +79,153 @@ object LensCommands {
 
   }
 
-  def mint(ergoClient: ErgoClient, networkType: NetworkType, mnemonic: String, walletAddress: String): Array[(String, String)] = {
+//  def mint(ergoClient: ErgoClient, networkType: String, mnemonic: String, walletAddress: String): Array[(String, String)] = {
+//
+//    // Generate blockchain context
+//    val liliumTxIds: Array[String] = ergoClient.execute((ctx: BlockchainContext) => {
+//
+//      // create tx builder
+//      val issuerCreationTxBuilder: UnsignedTransactionBuilder = ctx.newTxBuilder()
+//
+//      // create prover
+//      val prover: ErgoProver = ctx.newProverBuilder()
+//        .withMnemonic(
+//              SecretString.create(mnemonic),
+//              SecretString.empty(),
+//              false
+//        )
+//        .withEip3Secret(0)
+//        .build()
+//
+//      // 1. creating issuer box transaction
+//
+//      // get input box
+//      val myBoxId: String = boxId
+//      val address = Address.create(walletAddress)
+//      val inputBox = ctx.getDataSource.getBoxById(myBoxId, false, false)
+//      val minerFee: Long = Parameters.MinFee
+//
+//      // To encode metadata we do everything in small steps
+//      // version
+//      val version = ErgoValue.of(2)
+//
+//      // royalty
+//      val royalty = ErgoValue.of(Array[Byte]())// no royalty, but could be interesting use case for zengate tea???
+//
+//      // properties
+//      val properties_entry1 = ErgoValue.pairOf(ErgoValue.of("teaType".getBytes(Charset.defaultCharset())), ErgoValue.of("chai".getBytes(Charset.defaultCharset())))
+//      val properties_entry1_type = properties_entry1.getType
+//
+//      val properties_entry2 = ErgoValue.pairOf(ErgoValue.of("teaFlavor".getBytes(Charset.defaultCharset())), ErgoValue.of("mild".getBytes(Charset.defaultCharset())))
+//
+//      val properties = ErgoValue.of(Array(properties_entry1.getValue, properties_entry2.getValue), properties_entry1_type)
+//      //val properties_type = properties.getType
+//
+//      // levels
+//      val levels_entry1 = ErgoValue.pairOf(ErgoValue.of("caffeineContentInMilliGrams".getBytes(Charset.defaultCharset())), ErgoValue.pairOf(ErgoValue.of(80), ErgoValue.of(100)))
+//      val level_entry1_type = levels_entry1.getType
+//
+//      val levels = ErgoValue.of(Array(levels_entry1.getValue), level_entry1_type)
+//      //val levels_type = levels.getType
+//
+//      // stats
+//      val stats_entry1 = ErgoValue.pairOf(ErgoValue.of("pricePerKgInUSD".getBytes(Charset.defaultCharset())), ErgoValue.pairOf(ErgoValue.of(100), ErgoValue.of(1000)))
+//      val stats_entry1_type = stats_entry1.getType
+//
+//      val stats = ErgoValue.of(Array(stats_entry1.getValue), stats_entry1_type)
+//      //val stats_type = stats.getType
+//
+//      // metadata
+//      val metadata = ErgoValue.pairOf(properties, ErgoValue.pairOf(levels, stats))
+//
+//      // collection token id
+//      val collectionTokenId = ErgoValue.of(Array[Byte]())
+//
+//      // additional info
+//      val additionalInfo = ErgoValue.of(Array[Byte]())
+//
+//      // create issuer box: please refer to EIP-24
+//      val issuerBoxValue: Long = 100*minerFee
+//      val issuerBoxAddress: Address = address
+//      val issuerBoxContract = issuerBoxAddress.toErgoContract
+//      val issuerBox: OutBox = issuerCreationTxBuilder.outBoxBuilder()
+//        .value(issuerBoxValue)
+//        .contract(issuerBoxContract)
+//        .registers(
+//          version,
+//          royalty,
+//          metadata,
+//          collectionTokenId,
+//          additionalInfo
+//        )
+//        .build()
+//
+//      val unsignedIssuerCreationTx: UnsignedTransaction = issuerCreationTxBuilder.addInputs(inputBox)
+//        .addOutputs(issuerBox)
+//        .fee(minerFee)
+//        .sendChangeTo(address)
+//        .build()
+//
+//      // note: we will sign both transactions at the same time to chain them, in practice a check should be put in place in case the first one fails, even if executed right after the other
+//
+//      // 2. creating mint transaction
+//
+//      // we must create a new tx builder for this second transaction, this is very important!!!
+//      val mintTxBuilder = ctx.newTxBuilder()
+//
+//      // this will be the new issuer box input to the minting transaction
+//      val issuerBoxInput: InputBox = issuerBox.convertToInputWith(unsignedIssuerCreationTx.getId, 0) // the issuer box will be the first output box in the transaction
+//
+//      // create token
+//      val tokenId: String = issuerBoxInput.getId.toString
+//      val tokenAmount: Long = 1 // neo: set to 1 for NFT, but can be any amount you want in principle, i.e. for "fungible" tokens
+//      val tokenDecimals: Int = 0
+//      val tokenContentHash = Sha256.hash(tokenContent)
+//      val myToken: Eip4Token = Eip4TokenBuilder.buildNftPictureToken(
+//        tokenId,
+//        tokenAmount,
+//        tokenName,
+//        tokenDescription,
+//        tokenDecimals,
+//        tokenContentHash,
+//        tokenLink
+//      )
+//
+//      // create issuance box
+//      val issuanceBoxValue: Long = 10*minerFee
+//      val issuanceBoxAddress: Address = address
+//      val issuanceBoxContract: ErgoContract = issuanceBoxAddress.toErgoContract
+//      val issuanceBox: OutBox = mintTxBuilder.outBoxBuilder()
+//        .value(issuanceBoxValue)
+//        .mintToken(myToken)
+//        .contract(issuanceBoxContract)
+//        .build()
+//
+//      // create unsigned mint transaction
+//      val unsignedMintForDummiesTx: UnsignedTransaction = mintTxBuilder.addInputs(issuerBoxInput)
+//        .addOutputs(issuanceBox)
+//        .fee(minerFee)
+//        .sendChangeTo(address)
+//        .build()
+//
+//      // sign both the issuer creation tx and mint tx
+//      val signedIssuerCreationTx: SignedTransaction = prover.sign(unsignedIssuerCreationTx)
+//      val signedMintForDummiesTx: SignedTransaction = prover.sign(unsignedMintForDummiesTx)
+//      val issuerCreationTxId: String = ctx.sendTransaction(signedIssuerCreationTx)
+//      val mintForDummiesTxId: String = ctx.sendTransaction(signedMintForDummiesTx)
+//
+//      (issuerCreationTxId, mintForDummiesTxId)
+//
+//    })
+//
+//    // remove quotation marks from string.
+//    (mintForDummiesTxIds._1.replaceAll("\"", ""), mintForDummiesTxIds._2.replaceAll("\"", ""))
+//  }
+
+  def mintCollection(ergoClient: ErgoClient, networkType: String, mnemonic: String, walletAddress: String): Array[String] = {
 
     // Generate blockchain context
     val liliumTxIds: Array[String] = ergoClient.execute((ctx: BlockchainContext) => {
-
-      // create tx builder
-      val issuerCreationTxBuilder: UnsignedTransactionBuilder = ctx.newTxBuilder()
-
-      // create prover
-      val prover: ErgoProver = ctx.newProverBuilder()
-        .withMnemonic(
-              SecretString.create(mnemonic),
-              SecretString.empty(),
-              false
-        )
-        .withEip3Secret(0)
-        .build()
-
-      // 1. creating issuer box transaction
-
-      // get input box
-      val myBoxId: String = boxId
-      val address = Address.create(walletAddress)
-      val inputBox = ctx.getDataSource.getBoxById(myBoxId, false, false)
-      val minerFee: Long = Parameters.MinFee
-
-      // To encode metadata we do everything in small steps
-      // version
-      val version = ErgoValue.of(2)
-
-      // royalty
-      val royalty = ErgoValue.of(Array[Byte]())// no royalty, but could be interesting use case for zengate tea???
-
-      // properties
-      val properties_entry1 = ErgoValue.pairOf(ErgoValue.of("teaType".getBytes(Charset.defaultCharset())), ErgoValue.of("chai".getBytes(Charset.defaultCharset())))
-      val properties_entry1_type = properties_entry1.getType
-
-      val properties_entry2 = ErgoValue.pairOf(ErgoValue.of("teaFlavor".getBytes(Charset.defaultCharset())), ErgoValue.of("mild".getBytes(Charset.defaultCharset())))
-
-      val properties = ErgoValue.of(Array(properties_entry1.getValue, properties_entry2.getValue), properties_entry1_type)
-      //val properties_type = properties.getType
-
-      // levels
-      val levels_entry1 = ErgoValue.pairOf(ErgoValue.of("caffeineContentInMilliGrams".getBytes(Charset.defaultCharset())), ErgoValue.pairOf(ErgoValue.of(80), ErgoValue.of(100)))
-      val level_entry1_type = levels_entry1.getType
-
-      val levels = ErgoValue.of(Array(levels_entry1.getValue), level_entry1_type)
-      //val levels_type = levels.getType
-
-      // stats
-      val stats_entry1 = ErgoValue.pairOf(ErgoValue.of("pricePerKgInUSD".getBytes(Charset.defaultCharset())), ErgoValue.pairOf(ErgoValue.of(100), ErgoValue.of(1000)))
-      val stats_entry1_type = stats_entry1.getType
-
-      val stats = ErgoValue.of(Array(stats_entry1.getValue), stats_entry1_type)
-      //val stats_type = stats.getType
-
-      // metadata
-      val metadata = ErgoValue.pairOf(properties, ErgoValue.pairOf(levels, stats))
-
-      // collection token id
-      val collectionTokenId = ErgoValue.of(Array[Byte]())
-
-      // additional info
-      val additionalInfo = ErgoValue.of(Array[Byte]())
-
-      // create issuer box: please refer to EIP-24
-      val issuerBoxValue: Long = 100*minerFee
-      val issuerBoxAddress: Address = address
-      val issuerBoxContract = issuerBoxAddress.toErgoContract
-      val issuerBox: OutBox = issuerCreationTxBuilder.outBoxBuilder()
-        .value(issuerBoxValue)
-        .contract(issuerBoxContract)
-        .registers(
-          version,
-          royalty,
-          metadata,
-          collectionTokenId,
-          additionalInfo
-        )
-        .build()
-
-      val unsignedIssuerCreationTx: UnsignedTransaction = issuerCreationTxBuilder.addInputs(inputBox)
-        .addOutputs(issuerBox)
-        .fee(minerFee)
-        .sendChangeTo(address)
-        .build()
-
-      // note: we will sign both transactions at the same time to chain them, in practice a check should be put in place in case the first one fails, even if executed right after the other
-
-      // 2. creating mint transaction
-
-      // we must create a new tx builder for this second transaction, this is very important!!!
-      val mintTxBuilder = ctx.newTxBuilder()
-
-      // this will be the new issuer box input to the minting transaction
-      val issuerBoxInput: InputBox = issuerBox.convertToInputWith(unsignedIssuerCreationTx.getId, 0) // the issuer box will be the first output box in the transaction
-
-      // create token
-      val tokenId: String = issuerBoxInput.getId.toString
-      val tokenAmount: Long = 1 // neo: set to 1 for NFT, but can be any amount you want in principle, i.e. for "fungible" tokens
-      val tokenDecimals: Int = 0
-      val tokenContentHash = Sha256.hash(tokenContent)
-      val myToken: Eip4Token = Eip4TokenBuilder.buildNftPictureToken(
-        tokenId,
-        tokenAmount,
-        tokenName,
-        tokenDescription,
-        tokenDecimals,
-        tokenContentHash,
-        tokenLink
-      )
-
-      // create issuance box
-      val issuanceBoxValue: Long = 10*minerFee
-      val issuanceBoxAddress: Address = address
-      val issuanceBoxContract: ErgoContract = issuanceBoxAddress.toErgoContract
-      val issuanceBox: OutBox = mintTxBuilder.outBoxBuilder()
-        .value(issuanceBoxValue)
-        .mintToken(myToken)
-        .contract(issuanceBoxContract)
-        .build()
-
-      // create unsigned mint transaction
-      val unsignedMintForDummiesTx: UnsignedTransaction = mintTxBuilder.addInputs(issuerBoxInput)
-        .addOutputs(issuanceBox)
-        .fee(minerFee)
-        .sendChangeTo(address)
-        .build()
-
-      // sign both the issuer creation tx and mint tx
-      val signedIssuerCreationTx: SignedTransaction = prover.sign(unsignedIssuerCreationTx)
-      val signedMintForDummiesTx: SignedTransaction = prover.sign(unsignedMintForDummiesTx)
-      val issuerCreationTxId: String = ctx.sendTransaction(signedIssuerCreationTx)
-      val mintForDummiesTxId: String = ctx.sendTransaction(signedMintForDummiesTx)
-
-      (issuerCreationTxId, mintForDummiesTxId)
-
-    })
-
-    // remove quotation marks from string.
-    (mintForDummiesTxIds._1.replaceAll("\"", ""), mintForDummiesTxIds._2.replaceAll("\"", ""))
-  }
-
-  def mintCollection(ergoClient: ErgoClient, networkType: NetworkType, mnemonic: String, walletAddress: String): Array[(String, String)] = {
-
-    // Generate blockchain context
-    val liliumTxIds: Array[(String, String)] = ergoClient.execute((ctx: BlockchainContext) => {
 
       // create prover
       val prover: ErgoProver = ctx.newProverBuilder()
@@ -242,6 +242,7 @@ object LensCommands {
       // 0. Get the collection config and the nft metadata config
       val collectionConfig = LensCollectionConfig.load(LILIUM_COLLECTION_CONFIG_PATH).get
       val nftMetadataConfig = LensNFTConfig.load(LILIUM_NFT_METADATA_CONFIG_PATH).get
+      var transactions: Array[UnsignedTransaction] = Array()
 
       // 1. Create the collection issuer tx builder.
       val collectionIssuerTxBuilder: UnsignedTransactionBuilder = ctx.newTxBuilder()
@@ -252,10 +253,11 @@ object LensCommands {
       val minerFee: Long = Parameters.MinFee
       val liliumFee: Long = liliumFeeInNanoERG(collectionConfig.getCollectionSize)
       val liliumAddress: Address = Address.create(if (networkType.equals("mainnet")) LILIUM_MAINNET_FEE_ADDRESS else LILIUM_TESTNET_FEE_ADDRESS)
+      val mintCost: Long = collectionConfig.getCollectionSize * (10000000 + Parameters.MinFee)
 
       // 3. Create the collection issuer output.
       val collectionIssuer = collectionIssuerTxBuilder.outBoxBuilder()
-        .value(10000000)
+        .value(mintCost)
         .contract(userAddress.toErgoContract)
         .registers(
           sigmabuilders.encoders.minting_encoders.EIP34IssuerEncoder.encodeR4(collectionConfig.getCollectionStandardVersion),
@@ -267,140 +269,123 @@ object LensCommands {
         .build()
 
       // 4. Create the Lilium fee output.
-      val liliumFee = collectionIssuerTxBuilder.outBoxBuilder()
+      val liliumFeeBox: OutBox = collectionIssuerTxBuilder.outBoxBuilder()
         .value(liliumFee)
         .contract(liliumAddress.toErgoContract)
         .build()
 
       // 5. Create the collection issuer transaction.
+      val unsignedCollectionIssuerTx: UnsignedTransaction = collectionIssuerTxBuilder
+        .addInputs(inputs:_*)
+        .addOutputs(collectionIssuer, liliumFeeBox)
+        .fee(minerFee)
+        .sendChangeTo(userAddress)
+        .build()
 
+      transactions ++ Array(unsignedCollectionIssuerTx)
 
-      // create tx builder
-      val issuerCreationTxBuilder: UnsignedTransactionBuilder = ctx.newTxBuilder()
+      // 6. Create the collection issuance transactions.
+      val collectionIssuanceTxBuilder: UnsignedTransactionBuilder = ctx.newTxBuilder()
 
-      // 1. creating issuer box transaction
+      // 7. Get the inputs
+      val collectionIssuerInput: InputBox = collectionIssuer.convertToInputWith(unsignedCollectionIssuerTx.getId, 0)
 
-      // get input box
-      val myBoxId: String = boxId
-      val address = Address.create(walletAddress)
-      val inputBox = ctx.getDataSource.getBoxById(myBoxId, false, false)
-      val minerFee: Long = Parameters.MinFee
-
-      // To encode metadata we do everything in small steps
-      // version
-      val version = ErgoValue.of(2)
-
-      // royalty
-      val royalty = ErgoValue.of(Array[Byte]()) // no royalty, but could be interesting use case for zengate tea???
-
-      // properties
-      val properties_entry1 = ErgoValue.pairOf(ErgoValue.of("teaType".getBytes(Charset.defaultCharset())), ErgoValue.of("chai".getBytes(Charset.defaultCharset())))
-      val properties_entry1_type = properties_entry1.getType
-
-      val properties_entry2 = ErgoValue.pairOf(ErgoValue.of("teaFlavor".getBytes(Charset.defaultCharset())), ErgoValue.of("mild".getBytes(Charset.defaultCharset())))
-
-      val properties = ErgoValue.of(Array(properties_entry1.getValue, properties_entry2.getValue), properties_entry1_type)
-      //val properties_type = properties.getType
-
-      // levels
-      val levels_entry1 = ErgoValue.pairOf(ErgoValue.of("caffeineContentInMilliGrams".getBytes(Charset.defaultCharset())), ErgoValue.pairOf(ErgoValue.of(80), ErgoValue.of(100)))
-      val level_entry1_type = levels_entry1.getType
-
-      val levels = ErgoValue.of(Array(levels_entry1.getValue), level_entry1_type)
-      //val levels_type = levels.getType
-
-      // stats
-      val stats_entry1 = ErgoValue.pairOf(ErgoValue.of("pricePerKgInUSD".getBytes(Charset.defaultCharset())), ErgoValue.pairOf(ErgoValue.of(100), ErgoValue.of(1000)))
-      val stats_entry1_type = stats_entry1.getType
-
-      val stats = ErgoValue.of(Array(stats_entry1.getValue), stats_entry1_type)
-      //val stats_type = stats.getType
-
-      // metadata
-      val metadata = ErgoValue.pairOf(properties, ErgoValue.pairOf(levels, stats))
-
-      // collection token id
-      val collectionTokenId = ErgoValue.of(Array[Byte]())
-
-      // additional info
-      val additionalInfo = ErgoValue.of(Array[Byte]())
-
-      // create issuer box: please refer to EIP-24
-      val issuerBoxValue: Long = 100 * minerFee
-      val issuerBoxAddress: Address = address
-      val issuerBoxContract = issuerBoxAddress.toErgoContract
-      val issuerBox: OutBox = issuerCreationTxBuilder.outBoxBuilder()
-        .value(issuerBoxValue)
-        .contract(issuerBoxContract)
-        .registers(
-          version,
-          royalty,
-          metadata,
-          collectionTokenId,
-          additionalInfo
+      // 8. Build the collection issuance output
+      val collectionIssuance: OutBox = collectionIssuerTxBuilder.outBoxBuilder()
+        .value(collectionIssuerInput.getValue - minerFee)
+        .contract(userAddress.toErgoContract)
+        .mintToken(
+          Eip4TokenBuilder.buildNftArtworkCollectionToken(
+            collectionIssuerInput.getId.toString,
+            collectionConfig.getCollectionSize,
+            collectionConfig.getCollectionName,
+            collectionConfig.getCollectionDescription,
+            0
+          )
         )
         .build()
 
-      val unsignedIssuerCreationTx: UnsignedTransaction = issuerCreationTxBuilder.addInputs(inputBox)
-        .addOutputs(issuerBox)
+      // 9. Build the collection issuance transaction
+      val unsignedCollectionIssuanceTx: UnsignedTransaction = collectionIssuanceTxBuilder
+        .addInputs(collectionIssuerInput)
+        .addOutputs(collectionIssuance)
         .fee(minerFee)
-        .sendChangeTo(address)
         .build()
 
-      // note: we will sign both transactions at the same time to chain them, in practice a check should be put in place in case the first one fails, even if executed right after the other
+      transactions ++ Array(unsignedCollectionIssuanceTx)
 
-      // 2. creating mint transaction
+      // 10. Build the minting transactions
+      val numOfStages = collectionConfig.getCollectionSize / 100
+      val step = if (collectionConfig.getCollectionSize > 100) 100 else collectionConfig.getCollectionSize.toInt
+      var collectionIssuanceLoop = collectionIssuance.convertToInputWith(unsignedCollectionIssuanceTx.getId, 0)
+      var shift = 0
 
-      // we must create a new tx builder for this second transaction, this is very important!!!
-      val mintTxBuilder = ctx.newTxBuilder()
+      for (i <- 0 to numOfStages-1) {
 
-      // this will be the new issuer box input to the minting transaction
-      val issuerBoxInput: InputBox = issuerBox.convertToInputWith(unsignedIssuerCreationTx.getId, 0) // the issuer box will be the first output box in the transaction
+        val issuerBoxes: Array[OutBox] = Array()
+        val stageTxBuilder = ctx.newTxBuilder()
 
-      // create token
-      val tokenId: String = issuerBoxInput.getId.toString
-      val tokenAmount: Long = 1 // neo: set to 1 for NFT, but can be any amount you want in principle, i.e. for "fungible" tokens
-      val tokenDecimals: Int = 0
-      val tokenContentHash = Sha256.hash(tokenContent)
-      val myToken: Eip4Token = Eip4TokenBuilder.buildNftPictureToken(
-        tokenId,
-        tokenAmount,
-        tokenName,
-        tokenDescription,
-        tokenDecimals,
-        tokenContentHash,
-        tokenLink
-      )
+        // get the nft issuer boxes
+        for (j <- 0 until step) {
 
-      // create issuance box
-      val issuanceBoxValue: Long = 10 * minerFee
-      val issuanceBoxAddress: Address = address
-      val issuanceBoxContract: ErgoContract = issuanceBoxAddress.toErgoContract
-      val issuanceBox: OutBox = mintTxBuilder.outBoxBuilder()
-        .value(issuanceBoxValue)
-        .mintToken(myToken)
-        .contract(issuanceBoxContract)
-        .build()
+          val issuer = getNFTIssuer(collectionConfig, nftMetadataConfig.apply(j + shift), collectionIssuanceLoop, minerFee, userAddress, j)(stageTxBuilder)
 
-      // create unsigned mint transaction
-      val unsignedMintForDummiesTx: UnsignedTransaction = mintTxBuilder.addInputs(issuerBoxInput)
-        .addOutputs(issuanceBox)
-        .fee(minerFee)
-        .sendChangeTo(address)
-        .build()
+          issuerBoxes ++ Array(issuer)
 
-      // sign both the issuer creation tx and mint tx
-      val signedIssuerCreationTx: SignedTransaction = prover.sign(unsignedIssuerCreationTx)
-      val signedMintForDummiesTx: SignedTransaction = prover.sign(unsignedMintForDummiesTx)
-      val issuerCreationTxId: String = ctx.sendTransaction(signedIssuerCreationTx)
-      val mintForDummiesTxId: String = ctx.sendTransaction(signedMintForDummiesTx)
+        }
 
-      (issuerCreationTxId, mintForDummiesTxId)
+        // build the stage tx
+        val stageTx = stageTxBuilder
+          .addInputs(collectionIssuanceLoop)
+          .addOutputs(issuerBoxes:_*)
+          .fee(minerFee)
+          .sendChangeTo(userAddress)
+          .build()
+
+        transactions ++ Array(stageTx)
+
+        // mint the nfts using the issuer boxes
+        for (k <- issuerBoxes.indices) {
+
+          // convert to inputs
+          val issuer = issuerBoxes(k)
+          val issuerInput = issuer.convertToInputWith(stageTx.getId, k.toShort)
+
+          // get the unsigned transaction
+          val mintTx = mintNFT(nftMetadataConfig.apply(k + shift), issuerInput, minerFee, userAddress)(ctx)
+
+          transactions ++ Array(mintTx)
+
+        }
+
+        // update some variables now
+        val issuanceIndex = stageTx.getOutputs.size() - 1
+        collectionIssuanceLoop = stageTx.getOutputs.get(issuanceIndex).convertToInputWith(stageTx.getId, issuanceIndex.toShort)
+        shift = shift + step
+
+      }
+
+      // process unsigned transactions
+      val ids: Array[String] = Array()
+      transactions.foreach(utx => {
+
+        // sign
+        val stx = prover.sign(utx)
+
+        // submit
+        val txid = ctx.sendTransaction(stx)
+
+        ids ++ Array(txid)
+
+      })
+
+      val formatted = ids.map(id => id.replaceAll("\"", ""))
+      formatted
 
     })
 
-    // remove quotation marks from string.
-    (mintForDummiesTxIds._1.replaceAll("\"", ""), mintForDummiesTxIds._2.replaceAll("\"", ""))
+    liliumTxIds
+
   }
 
 }
