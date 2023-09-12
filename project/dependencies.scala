@@ -19,10 +19,11 @@ object dependencies {
 
   val Sttp: List[ModuleID] = List(
     "com.softwaremill.sttp.client4" %% "core" % "4.0.0-M4",
-    "com.softwaremill.sttp.client4" %% "circe" % "4.0.0-M4"
+    "com.softwaremill.sttp.client4" %% "circe" % "4.0.0-M4",
   )
 
   val Circe: List[ModuleID] = List(
+    "io.circe" %% "circe-core" % "0.14.5",
     "io.circe" %% "circe-generic" % "0.14.5"
   )
 

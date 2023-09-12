@@ -253,8 +253,12 @@ object LensCommands {
       val inputs: Array[InputBox] = ctx.getDataSource.getUnspentBoxesFor(signer, 0, 100).asScala.toArray
       val minerFee: Long = Parameters.MinFee
       val liliumFee: Long = liliumFeeInNanoERG(collectionConfig.getCollectionSize)
-      val liliumAddress: Address = Address.create(if (networkType.equals("mainnet")) LILIUM_MAINNET_FEE_ADDRESS else LILIUM_TESTNET_FEE_ADDRESS)
-      val mintCost: Long = collectionConfig.getCollectionSize * (10000000 + Parameters.MinFee)
+      val feeAddress: String = if (networkType.equals("mainnet")) LILIUM_MAINNET_FEE_ADDRESS else LILIUM_TESTNET_FEE_ADDRESS
+      val liliumAddress: Address = Address.create(feeAddress)
+      val outputSize: Int = 10000
+      val numOfStages: Int = if (collectionConfig.getCollectionSize > outputSize) math.ceil(collectionConfig.getCollectionSize / outputSize).toInt else 1
+      val step: Int = if (collectionConfig.getCollectionSize > outputSize) outputSize else collectionConfig.getCollectionSize.toInt
+      val mintCost: Long = (step * (1000000 + Parameters.MinFee + 1000000) + Parameters.MinFee + 1000000) * numOfStages
 
       // 3. Create the collection issuer output.
       val collectionIssuer = collectionIssuerTxBuilder.outBoxBuilder()
@@ -317,8 +321,6 @@ object LensCommands {
       transactions = transactions ++ Array(unsignedCollectionIssuanceTx)
 
       // 10. Build the minting transactions
-      val numOfStages = collectionConfig.getCollectionSize / 100
-      val step = if (collectionConfig.getCollectionSize > 100) 100 else collectionConfig.getCollectionSize.toInt
       var collectionIssuanceLoop = collectionIssuance.convertToInputWith(unsignedCollectionIssuanceTx.getId, 0)
       var shift = 0
 
@@ -369,6 +371,7 @@ object LensCommands {
 
       // process unsigned transactions
       var ids: Array[String] = Array()
+
       transactions.foreach(utx => {
 
         // sign

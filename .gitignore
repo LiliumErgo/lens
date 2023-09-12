@@ -3,3 +3,5 @@
 project/project
 project/target
 target
+/data/collection_metadata.json
+/data/nft_metadata.json

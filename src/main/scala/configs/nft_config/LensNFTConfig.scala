@@ -70,7 +70,7 @@ case class LensNFTConfig(
     val explicitByte: Byte = if (this.explicit) 1.toByte else 0.toByte
 
     Array(
-      ("explicit", explicitByte)
+      ("explicit", explicitByte.toHexString)
     )
 
   }

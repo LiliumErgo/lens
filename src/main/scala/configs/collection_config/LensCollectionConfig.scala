@@ -18,7 +18,7 @@ case class LensCollectionConfig(
                            royalties: Array[RoyaltyInfo],
                            socials: Array[SocialInfo],
                            mintingExpiry: Long,
-                           additionalInfo: Array[AdditionalInfo]
+                           additionalInformation: Array[AdditionalInfo]
                            ) {
 
   def getCollectionName: String = this.collectionName
@@ -62,7 +62,7 @@ case class LensCollectionConfig(
 
   def getAdditionalInfo: Array[(String, String)] = {
 
-    val infos: Array[AdditionalInfo] = this.additionalInfo
+    val infos: Array[AdditionalInfo] = this.additionalInformation
     val formatted: Array[(String, String)] = infos.map(info => (info.infoKey, info.infoValue))
     formatted
 
