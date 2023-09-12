@@ -35,8 +35,6 @@ object Lens extends App {
         val signerAddress: String = args(4)
         val recipientAddress: String = args(5)
 
-        var liliumTxIds: Array[String] = Array()
-
         if (mintType.equals("single")) {
 
             println(Console.YELLOW + s"========== ${LensUtils.getTimeStamp("UTC")} LENS SINGLE MINT TX INITIATED ==========" + Console.RESET)
@@ -49,7 +47,7 @@ object Lens extends App {
 
             println(Console.YELLOW + s"========== ${LensUtils.getTimeStamp("UTC")} LENS COLLECTION MINT TX INITIATED ==========" + Console.RESET)
 
-            liliumTxIds = LensCommands.mintCollection(ergoClient, networkTypeString, signerMnemonic, signerAddress, recipientAddress)
+            LensCommands.mintCollection(ergoClient, networkTypeString, signerMnemonic, signerAddress, recipientAddress)
 
             println(Console.GREEN + s"========== ${LensUtils.getTimeStamp("UTC")} LENS COLLECTION MINT TX SUCCESSFUL ==========" + Console.RESET)
 
@@ -59,23 +57,6 @@ object Lens extends App {
 
         // Print tx links to the user
         println(Console.BLUE + s"========== ${LensUtils.getTimeStamp("UTC")} VIEW LENS MINT TXS IN THE ERGO-EXPLORER WITH THE LINKS BELOW ==========" + Console.RESET)
-
-        if (networkTypeString.equals("mainnet")) {
-
-            liliumTxIds.foreach(id => {
-
-                println(LensUtils.ERGO_EXPLORER_TX_URL_PREFIX_MAINNET + id)
-
-            })
-
-        } else {
-
-            liliumTxIds.foreach(id => {
-
-                println(LensUtils.ERGO_EXPLORER_TX_URL_PREFIX_TESTNET + id)
-
-            })
-        }
 
         exit(0)
 

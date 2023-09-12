@@ -1,18 +1,25 @@
 package app
 
+import app.Lens.networkTypeString
 import configs.collection_config.LensCollectionConfig
 import configs.nft_config.LensNFTConfig
-import utils.ExplorerApi
+import utils.{ExplorerApi, LensUtils}
 import utils.LensUtils.{LILIUM_COLLECTION_CONFIG_PATH, LILIUM_COLLECTION_ISSUANCE_ERGOTREE_TEMPLATE_HEX, LILIUM_MAINNET_FEE_ADDRESS, LILIUM_NFT_METADATA_CONFIG_PATH, LILIUM_STATE_BOX_ERGOTREE_TEMPLATE_HEX, LILIUM_TESTNET_FEE_ADDRESS, SKYHARBOR_SALE_BOX_ERGOTREE_TEMPLATE_HEX, getErgoTreeTemplateHex, getNFTIssuer, liliumFeeInNanoERG, mintNFT}
 import org.guapswap._
 import org.ergoplatform.appkit._
 import org.ergoplatform.appkit.impl.Eip4TokenBuilder
 import org.ergoplatform.explorer.client.model.OutputInfo
-import scorex.crypto.hash.Sha256
 import scorex.util.encode.Base16
 
 import java.nio.charset.Charset
 import scala.collection.JavaConverters._
+import scala.collection.mutable
+import scala.collection.mutable.Queue
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration._
+import scala.util.{Failure, Success}
+
+
 
 object LensCommands {
   def snapshot(networkType: NetworkType, nodeUrl: String, explorerUrl: String, collectionId: String): Unit = {
@@ -222,10 +229,10 @@ object LensCommands {
 //    (mintForDummiesTxIds._1.replaceAll("\"", ""), mintForDummiesTxIds._2.replaceAll("\"", ""))
 //  }
 
-  def mintCollection(ergoClient: ErgoClient, networkType: String, signerMnemonic: String, signerAddress: String, recipientAddress: String): Array[String] = {
+  def mintCollection(ergoClient: ErgoClient, networkType: String, signerMnemonic: String, signerAddress: String, recipientAddress: String): Unit = {
 
     // Generate blockchain context
-    val liliumTxIds: Array[String] = ergoClient.execute((ctx: BlockchainContext) => {
+    ergoClient.execute((ctx: BlockchainContext) => {
 
       // create prover
       val prover: ErgoProver = ctx.newProverBuilder()
@@ -242,7 +249,8 @@ object LensCommands {
       // 0. Get the collection config and the nft metadata config
       val collectionConfig = LensCollectionConfig.load(LILIUM_COLLECTION_CONFIG_PATH).get
       val nftMetadataConfig = LensNFTConfig.load(LILIUM_NFT_METADATA_CONFIG_PATH).get
-      var transactions: Array[UnsignedTransaction] = Array()
+      val transactionQueue: mutable.Queue[UnsignedTransaction] = mutable.Queue()
+
 
       // 1. Create the collection issuer tx builder.
       val collectionIssuerTxBuilder: UnsignedTransactionBuilder = ctx.newTxBuilder()
@@ -287,7 +295,7 @@ object LensCommands {
         .sendChangeTo(signer)
         .build()
 
-      transactions = transactions ++ Array(unsignedCollectionIssuerTx)
+      transactionQueue.enqueue(unsignedCollectionIssuerTx)
 
       // 6. Create the collection issuance transactions.
       val collectionIssuanceTxBuilder: UnsignedTransactionBuilder = ctx.newTxBuilder()
@@ -318,7 +326,7 @@ object LensCommands {
         .sendChangeTo(signer)
         .build()
 
-      transactions = transactions ++ Array(unsignedCollectionIssuanceTx)
+      transactionQueue.enqueue(unsignedCollectionIssuanceTx)
 
       // 10. Build the minting transactions
       var collectionIssuanceLoop = collectionIssuance.convertToInputWith(unsignedCollectionIssuanceTx.getId, 0)
@@ -346,7 +354,7 @@ object LensCommands {
           .sendChangeTo(signer)
           .build()
 
-        transactions = transactions ++ Array(stageTx)
+        transactionQueue.enqueue(stageTx)
 
         // mint the nfts using the issuer boxes
         for (k <- issuerBoxes.indices) {
@@ -358,7 +366,7 @@ object LensCommands {
           // get the unsigned transaction
           val mintTx = mintNFT(nftMetadataConfig.apply(k + shift), issuerInput, minerFee, signer, recipient)(ctx)
 
-          transactions = transactions ++ Array(mintTx)
+          transactionQueue.enqueue(mintTx)
 
         }
 
@@ -369,27 +377,69 @@ object LensCommands {
 
       }
 
-      // process unsigned transactions
-      var ids: Array[String] = Array()
+      // execution context
+      implicit val ec: ExecutionContext = ExecutionContext.global
+      type TransactionId = String
 
-      transactions.foreach(utx => {
+      // Batch size
+      val batchSize = 100
+      var counter = 0
 
-        // sign
-        val stx = prover.sign(utx)
+      // Submit transactions in batches
+      while (transactionQueue.nonEmpty) {
 
-        // submit
-        val txid = ctx.sendTransaction(stx)
+        counter = 0
+        val currentBatch = transactionQueue.dequeueAll { _ =>
+          if (counter < batchSize) {
+            counter += 1
+            true
+          } else {
+            false
+          }
+        }
 
-        ids = ids ++ Array(txid)
+        val futureList: List[Future[TransactionId]] = currentBatch.map { unsignedTransaction =>
 
-      })
+          // Sign and submit
+          Future {
+            val signedTransaction = prover.sign(unsignedTransaction)
+            ctx.sendTransaction(signedTransaction)
+          }
 
-      val formatted = ids.map(id => id.replaceAll("\"", ""))
-      formatted
+        }.toList
+
+        val futureSequence: Future[List[TransactionId]] = Future.sequence(futureList)
+
+        // Wait for all transactions in the current batch to complete, each batch corresponds to transactions processed within one block.
+        val txIds: List[TransactionId] = Await.result(futureSequence, 10.minutes) // Adjust the timeout accordingly
+
+
+        if (networkType.equals("mainnet")) {
+
+         txIds.foreach(id => {
+
+           val formatId = id.replaceAll("\"", "")
+           println(LensUtils.ERGO_EXPLORER_TX_URL_PREFIX_MAINNET + formatId)
+
+          })
+
+        } else {
+
+          txIds.foreach(id => {
+
+            val formatId = id.replaceAll("\"", "")
+            println(LensUtils.ERGO_EXPLORER_TX_URL_PREFIX_TESTNET + formatId)
+
+          })
+
+        }
+
+        // Optionally, pause between batches to avoid rate limiting or server overload
+        Thread.sleep(60000) // 60 seconds
+
+      }
 
     })
-
-    liliumTxIds
 
   }
 
